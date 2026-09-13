@@ -50,21 +50,17 @@ function openApp(e,type){
  } else if(type==='google' && isIOS){
    appUrl='comgooglemaps://?q='+encodeURIComponent(coords);
  } else if(type==='neshan' && isAndroid){
-   appUrl='intent://navigation?lat=35.81561125830825&lng=51.60257717594504#Intent;scheme=neshan;package=ir.neshan.maps;end';
+   appUrl='neshan://navigation?lat='+encodeURIComponent('35.81561125830825')+'&lng='+encodeURIComponent('51.60257717594504');
  } else if(type==='neshan' && isIOS){
    appUrl='neshan://navigation?lat=35.81561125830825&lng=51.60257717594504';
  } else {
    window.location.href=fallbackUrl; return;
  }
- let leftPage=false;
- const mark=()=>{leftPage=true};
- document.addEventListener('visibilitychange',mark);
- window.addEventListener('pagehide',mark,{once:true});
- try { window.location.href=appUrl; } catch(err) { window.location.href=fallbackUrl; return; }
- setTimeout(()=>{
-   document.removeEventListener('visibilitychange',mark);
-   if(!leftPage && !document.hidden) window.location.replace(fallbackUrl);
- },900);
+ let hidden=false;
+ const onVis=()=>{if(document.hidden) hidden=true};
+ document.addEventListener('visibilitychange',onVis,{once:true});
+ window.location.href=appUrl;
+ setTimeout(()=>{document.removeEventListener('visibilitychange',onVis); if(!hidden && !document.hidden) window.location.href=fallbackUrl;},1200);
 }
 document.addEventListener('DOMContentLoaded',()=>{
  const links=document.querySelectorAll('.nav');
