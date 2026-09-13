@@ -44,23 +44,48 @@ function openApp(e,type){
  const ua=navigator.userAgent||'';
  const isAndroid=/Android/i.test(ua);
  const isIOS=/iPhone|iPad|iPod/i.test(ua);
- let appUrl, fallbackUrl=fallback[type];
+ const lat='35.81561125830825';
+ const lng='51.60257717594504';
+ const fallbackUrl=fallback[type];
+ let attempts=[];
+
+ // Android: use explicit package intents first. The package ID is independent
+ // of whether the APK came from Google Play, Bazaar, Myket, direct APK, etc.
  if(type==='google' && isAndroid){
-   appUrl='google.navigation:q='+encodeURIComponent(coords);
- } else if(type==='google' && isIOS){
-   appUrl='comgooglemaps://?q='+encodeURIComponent(coords);
+   const fb=encodeURIComponent(fallbackUrl);
+   attempts=[
+     'intent://maps.google.com/?q='+lat+','+lng+'#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url='+fb+';end',
+     'google.navigation:q='+lat+','+lng'
+   ];
  } else if(type==='neshan' && isAndroid){
-   appUrl='neshan://navigation?lat='+encodeURIComponent('35.81561125830825')+'&lng='+encodeURIComponent('51.60257717594504');
+   const fb=encodeURIComponent(fallbackUrl);
+   attempts=[
+     'intent://nshn.ir/?lat='+lat+'&lng='+lng+'#Intent;scheme=http;package=org.rajman.neshan.traffic.tehran.navigator;S.browser_fallback_url='+fb+';end',
+     'neshan://navigation?lat='+lat+'&lng='+lng
+   ];
+ } else if(type==='google' && isIOS){
+   attempts=['comgooglemaps://?q='+lat+','+lng];
  } else if(type==='neshan' && isIOS){
-   appUrl='neshan://navigation?lat=35.81561125830825&lng=51.60257717594504';
+   attempts=['neshan://navigation?lat='+lat+'&lng='+lng];
  } else {
    window.location.href=fallbackUrl; return;
  }
+
  let hidden=false;
  const onVis=()=>{if(document.hidden) hidden=true};
- document.addEventListener('visibilitychange',onVis,{once:true});
- window.location.href=appUrl;
- setTimeout(()=>{document.removeEventListener('visibilitychange',onVis); if(!hidden && !document.hidden) window.location.href=fallbackUrl;},1200);
+ document.addEventListener('visibilitychange',onVis);
+ let i=0;
+ const tryNext=()=>{
+   if(hidden || document.hidden) return;
+   if(i>=attempts.length){
+     document.removeEventListener('visibilitychange',onVis);
+     window.location.href=fallbackUrl;
+     return;
+   }
+   window.location.href=attempts[i++];
+   setTimeout(tryNext,900);
+ };
+ tryNext();
 }
 document.addEventListener('DOMContentLoaded',()=>{
  const links=document.querySelectorAll('.nav');
